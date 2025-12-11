@@ -68,5 +68,5 @@ streamlit run app.py
 https://books-recommender-bot.streamlit.app/
 
 ## Screenshots
-![img alt](https://github.com/nikhil-kumarrr/Book-Recommendation-System/blob/main/Screenshot%202025-12-11%20121107.png?raw=true)
-![img alt](https://github.com/nikhil-kumarrr/Book-Recommendation-System/blob/main/Screenshot%202025-12-11%20121139.png?raw=true)
+![img alt](https://github.com/nikhil-kumarrr/images/blob/main/Screenshot%202025-12-11%20121107.png?raw=true)
+![img alt](https://github.com/nikhil-kumarrr/images/blob/main/Screenshot%202025-12-11%20121139.png?raw=true)
