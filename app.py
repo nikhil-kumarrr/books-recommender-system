@@ -1,135 +1,165 @@
 import streamlit as st
 import pandas as pd
-import pickle
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+from PIL import Image
+import base64
+import time
 
-# ---------------------------
-# PAGE CONFIG + CUSTOM CSS
-# ---------------------------
-st.set_page_config(page_title="Book Recommender", layout="wide")
+# ---------------------------------------------------------
+# PAGE CONFIG
+# ---------------------------------------------------------
+st.set_page_config(
+    page_title="Book Recommender",
+    layout="wide",
+    page_icon="📚"
+)
 
-# LIGHT BLUE BACKGROUND + CLEAN CARD DESIGN
-page_bg = """
+# ---------------------------------------------------------
+# DARK MODE UI
+# ---------------------------------------------------------
+dark_theme = """
 <style>
-    body {
-        background-color: #e8f3ff !important;  /* Dim light blue */
-    }
-    .stApp {
-        background-color: #e8f3ff !important;
-    }
-    .main > div {
-        background-color: #e8f3ff !important;
-    }
 
-    /* Card Styling */
-    .book-card {
-        background: white;
-        padding: 12px;
-        border-radius: 12px;
-        box-shadow: 0px 2px 8px rgba(0,0,0,0.12);
-        text-align: center;
-        margin-bottom: 20px;
-        transition: 0.2s ease;
-    }
-    .book-card:hover {
-        transform: scale(1.03);
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.18);
-    }
+body {
+    background-color: #0e1117 !important;
+    color: #e1e1e1 !important;
+}
+
+.sidebar .sidebar-content {
+    background-color: #111418 !important;
+}
+
+.big-title {
+    font-size: 50px;
+    font-weight: 900;
+    color: #ffffff;
+    text-align: center;
+}
+
+.book-card {
+    background: #1a1d23;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    transition: all 0.3s ease-in-out;
+    border: 1px solid #2b2f36;
+}
+
+.book-card:hover {
+    transform: scale(1.05);
+    background: #242830;
+}
+
+.book-title {
+    color: #e5e5e5;
+    font-size: 18px;
+    margin-top: 10px;
+}
+
+img {
+    border-radius: 10px;
+}
+
+.search-bar input {
+    border-radius: 10px !important;
+    height: 50px;
+    font-size: 18px;
+}
+
 </style>
 """
 
-st.markdown(page_bg, unsafe_allow_html=True)
+st.markdown(dark_theme, unsafe_allow_html=True)
 
-# ---------------------------
+# ---------------------------------------------------------
 # LOAD DATA
-# ---------------------------
-books = pd.read_csv("Books.csv", low_memory=False)
-ratings = pd.read_csv("Ratings.csv")
-users = pd.read_csv("Users.csv")
+# ---------------------------------------------------------
+@st.cache_data
+def load_data():
+    books = pd.read_csv("books.csv")
+    books.fillna("", inplace=True)
 
-popular_books = pickle.load(open("popular.pkl", "rb"))
-popular_books = popular_books.reset_index(drop=True)
-
-pt = pickle.load(open("pt.pkl", "rb"))
-books_final = pickle.load(open("books.pkl", "rb"))
-similarity = pickle.load(open("similarity_scores.pkl", "rb"))
-
-book_list = pt.index.tolist()
-
-# ---------------------------
-# RECOMMEND FUNCTION
-# ---------------------------
-def recommend(book_name):
-    index = pt.index.get_loc(book_name)
-    distances = similarity[index]
-
-    book_list_indexes = sorted(
-        list(enumerate(distances)),
-        reverse=True,
-        key=lambda x: x[1]
-    )[1:6]
-
-    recommendations = []
-
-    for i in book_list_indexes:
-        temp = books_final[books_final["Book-Title"] == pt.index[i[0]]]
-
-        recommendations.append({
-            "title": pt.index[i[0]],
-            "author": temp["Book-Author"].values[0],
-            "image": temp["Image-URL-M"].values[0]
-        })
-
-    return recommendations
-
-# ---------------------------
-# SIDEBAR
-# ---------------------------
-menu = st.sidebar.radio(
-    "Select Feature",
-    ["Popular Books", "Recommend Books"]
-)
-
-# ---------------------------
-# POPULAR BOOKS
-# ---------------------------
-if menu == "Popular Books":
-    st.title("Popular Books")
-
-    for i in range(len(popular_books["Book-Title"])):
-        col1, col2 = st.columns([1, 3])
-
-        with col1:
-            st.image(popular_books["Image-URL-M"][i], width=120)
-
-        with col2:
-            st.markdown(f"<div class='book-card'>", unsafe_allow_html=True)
-            st.subheader(popular_books["Book-Title"][i])
-            st.write("Author:", popular_books["Book-Author"][i])
-            st.write("Avg Rating:", str(popular_books["avg_rating"][i]))
-            st.markdown("</div>", unsafe_allow_html=True)
-
-# ---------------------------
-# RECOMMEND BOOKS
-# ---------------------------
-if menu == "Recommend Books":
-    st.title("Book Recommendation System")
-
-    selected_book = st.selectbox(
-        "Select a Book",
-        book_list,
-        index=0
+    # -------------------------------
+    # CONTENT FEATURE FOR NLP
+    # -------------------------------
+    books["combined"] = (
+        books["title"].astype(str) + " " +
+        books["authors"].astype(str) + " " +
+        books["publisher"].astype(str) + " " +
+        books["categories"].astype(str)
     )
 
-    if st.button("Recommend"):
-        st.subheader(f"Books similar to **{selected_book}**")
-        data = recommend(selected_book)
+    # Cosine similarity
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    tfidf = TfidfVectorizer(stop_words="english")
+    matrix = tfidf.fit_transform(books["combined"])
+    similarity = cosine_similarity(matrix)
 
-        cols = st.columns(5)
+    return books, similarity
 
-        for idx, col in enumerate(cols):
-            with col:
-                st.markdown("<div class='book-card'>", unsafe_allow_html=True)
-                st.image(data[idx]["image"])
-                st.write(f"{data[idx]['title']}")
-                st.write(f"{data[idx]['author']}")
-                st.markdown("</div>", unsafe_allow_html=True)
+
+books, similarity = load_data()
+
+# ---------------------------------------------------------
+# ANIMATED HEADER
+# ---------------------------------------------------------
+st.markdown("<h1 class='big-title'>📚 Book Recommender System</h1>", unsafe_allow_html=True)
+st.write("")
+st.write("")
+
+# ---------------------------------------------------------
+# SEARCH BAR
+# ---------------------------------------------------------
+search = st.text_input("🔍 Search Book", placeholder="Type a book name...")
+
+if search.strip() != "":
+    results = books[books['title'].str.contains(search, case=False, na=False)]
+    if results.empty:
+        st.warning("No results found!")
+    else:
+        st.subheader("Search Results:")
+        for index, row in results.head(5).iterrows():
+            st.write(f"**{row['title']}** — {row['authors']}")
+
+st.write("---")
+
+# ---------------------------------------------------------
+# RECOMMENDATION SYSTEM
+# ---------------------------------------------------------
+st.subheader("📖 Select a Book for Recommendation")
+
+book_list = books["title"].tolist()
+selected_book = st.selectbox("Choose a book", book_list)
+
+if selected_book:
+    idx = books[books["title"] == selected_book].index[0]
+
+    scores = list(enumerate(similarity[idx]))
+    sorted_scores = sorted(scores, key=lambda x: x[1], reverse=True)[1:6]
+
+    st.write("")
+    st.write("### 🎯 Top Recommendations")
+
+    cols = st.columns(5)
+
+    for num, (i, score) in enumerate(sorted_scores):
+        with cols[num]:
+            try:
+                img = books.iloc[i]["thumbnail"]
+                st.image(img, width=130)
+            except:
+                st.image("https://via.placeholder.com/150", width=130)
+
+            st.markdown(f"<p class='book-title'>{books.iloc[i]['title']}</p>", unsafe_allow_html=True)
+            st.caption(books.iloc[i]["authors"])
+
+
+# ---------------------------------------------------------
+# FOOTER
+# ---------------------------------------------------------
+st.write("---")
+st.markdown(
+    "<p style='text-align:center;color:gray;'>Made with ❤️ using Streamlit</p>",
+    unsafe_allow_html=True
+)
