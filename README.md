@@ -8,7 +8,7 @@ The app suggests similar books based on a predefined similarity mapping and disp
 - 🎯 Smart Book Recommendations 
 - 🌗 Built-in Dark Mode / Light Mode Toggle
 - 🪟 Ultra Modern Glass UI
-- ⚡ Instant suggestions 
+- ⚡ Instant suggestions  
 - 📱 Responsive layout
 
 ## 🧠 How It Works
