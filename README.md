@@ -5,7 +5,7 @@ The app suggests similar books based on a predefined similarity mapping and disp
 
 ## 🚀 Features 
 - 🔥 Popular Books Section
-- 🎯 Smart Book Recommendations
+- 🎯 Smart Book Recommendations 
 - 🌗 Built-in Dark Mode / Light Mode Toggle
 - 🪟 Ultra Modern Glass UI
 - ⚡ Instant suggestions 
