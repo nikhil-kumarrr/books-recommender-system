@@ -12,7 +12,7 @@ The app suggests similar books based on a predefined similarity mapping and disp
 - 📱 Responsive layout
 
 ## 🧠 How It Works
-This project uses a static similarity dictionary to recommend books.
+This project uses a static similarity dictionary to recommend books. 
 When a user selects a book, the system retrieves the top similar titles and displays them with images, authors, and clean UI formatting.
 
 No external API calls. No ML model loading time.
